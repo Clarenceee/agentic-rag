@@ -1,88 +1,44 @@
 # Agentic RAG System
 
-Advanced Retrieval-Augmented Generation system with agentic capabilities for sophisticated document querying and reasoning.
+A sophisticated Retrieval-Augmented Generation (RAG) framework that combines the power of large language models with dynamic knowledge retrieval. The system enables complex, multi-step reasoning and information synthesis across diverse knowledge domains through its modular, agent-based architecture.
 
-## 🚀 Features
+This implementation demonstrates how to build production-grade RAG applications with advanced capabilities such as:
+- Multi-agent orchestration
+- Dynamic workflow management
+- Context-aware information retrieval
+- Stateful conversation handling
 
-- **Hybrid Retrieval**: Combines vector and keyword search
-- **Agentic Workflows**: Multi-step reasoning with LangGraph
-- **Structured Output**: Pydantic-validated responses
-- **Extensible**: Modular design for easy customization
+## 🏗️ System Architecture
 
-## 🛠️ Tech Stack
+### Core Components
 
-- Python 3.11+
-- OpenAI GPT models
-- Qdrant vector store
-- FastAPI backend
-- LangChain & LangGraph
+#### 1. Frontend Layer
+- **Streamlit-based Web Interface**: Interactive chat interface for user interactions
+- **Session Management**: Maintains conversation history and context
 
-## 🚀 Quick Start
+#### 2. Service Layer
+- **Main Application** (`main.py`): Entry point handling user requests and orchestrating the RAG pipeline
+- **Orchestrator** (`orchestrator/`): Implements workflow management with two approaches:
+  - `graph.py`: Advanced orchestration using LangGraph for complex, stateful workflows with dynamic routing and multi-step reasoning
+  - `basic.py`: Standard implementation using LangChain's built-in tools and agents
 
-1. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+#### 3. Agent Layer (`agents/`)
+- Specialized agents for different aspects of query processing:
 
-2. **Set up environment**:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your API keys
-   ```
+#### 4. Tooling Layer (`tools/`)
+- Utility functions and tools that support the RAG pipeline
+- Integration with external services and APIs
 
-3. **Run the API**:
-   ```bash
-   uvicorn main:app --reload
-   ```
+#### 5. Utilities (`utils/`)
+- Helper functions and common utilities
 
-4. **Access docs**: http://localhost:8000/docs
+## 🛠️ Technical Stack
 
-## 📁 Project Structure
-
-```
-agentic-rag/
-├── data/           # Source documents
-├── ingestion/      # Document processing
-├── retriever/      # Search components
-├── agents/         # Agent definitions
-├── workflows/      # LangGraph workflows
-├── models/         # Data models
-├── config.py       # App config
-└── main.py         # FastAPI app
-```
-
-## 📚 Usage Example
-
-```python
-from fastapi import FastAPI
-from pydantic import BaseModel
-import httpx
-
-app = FastAPI()
-
-class QueryRequest(BaseModel):
-    query: str
-
-@app.post("/query")
-async def query_rag(request: QueryRequest):
-    rag = get_rag_system()
-    result = await rag.query(request.query)
-    return {"response": result["response"], "documents": result["documents"]}
-```
-
-## 📝 Requirements
-
-- Python 3.11+
-- Qdrant (local or cloud)
-- OpenAI API key
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push and open a PR
-
-## 📄 License
-
-MIT# agentic-rag
+- **Frontend**: Streamlit
+- **Backend**: Python 3.11+
+- **AI/ML**:
+  - OpenAI GPT models for text generation
+  - Vector embeddings for semantic search
+- **Data Storage**:
+  - Vector database for efficient similarity search
+  - Document store for rule storage

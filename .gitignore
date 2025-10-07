@@ -1,0 +1,12 @@
+*.egg-info
+.DS_Store
+.venv
+.env
+.windsurf/
+
+# Artifacts and local data
+data/
+qdrant_storage/
+
+# Cache
+__pycache__/
