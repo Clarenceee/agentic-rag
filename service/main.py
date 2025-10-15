@@ -1,65 +1,81 @@
+import uuid
 import streamlit as st
-from process.main import NbaRag
+from langchain_core.messages import HumanMessage, AIMessage
+from orchestrator.main_graph_node import MainGraph
+from states.graph_states import OverallState, ContextSchema
+from ui.utilities import render_sidebar, setup_page, display_chat_history, login_form
+from utils.logger import get_logger
 
-st.set_page_config(page_title="NBA Rules Assistant", page_icon="🏀", layout="centered")
+logger = get_logger(__name__)
 
-# --- Sidebar Info ---
-with st.sidebar:
-    st.image("public/favicon.jpg", width=80)
-    st.markdown("## 📖 About")
-    st.markdown(
-        """
-    Welcome to the **NBA Rules Assistant**!
-    Ask me any question about NBA rules and I'll help clarify.
 
-    **Created by:** Clarence
-    **Powered by:** RAG pipeline
-    """
-    )
-    st.divider()
-    st.markdown("⚡ Tip: Try asking *What is a travel in basketball?*")
+def main():
+    # Show login if not authenticated
+    if "username" not in st.session_state:
+        login_form()
+        return
 
-# --- Main App Layout ---
-st.title("NBA Rules Assistant 🏀")
-st.write("Hello! I'm your NBA rules assistant.")
+    setup_page()
+    render_sidebar()
+    display_chat_history()
 
-# --- Initialize RAG Instance ---
-if "rag_instance" not in st.session_state:
-    st.session_state["rag_instance"] = NbaRag(user_id="Clarence")
+    # Setup Main Graph for session
+    if "main_graph" not in st.session_state:
+        st.session_state["main_graph"] = MainGraph()
+    main_graph = st.session_state["main_graph"].graph
 
-rag_instance = st.session_state["rag_instance"]
+    # Handle New Messages
+    if prompt := st.chat_input("Type your question here..."):
+        logger.info(f"Received input message : {prompt}")
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
-# --- Chat Input & Response ---
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+        with st.chat_message("assistant", avatar="public/favicon.jpg"):
+            with st.spinner("Thinking..."):
+                try:
+                    langchain_messages = []
+                    for msg in st.session_state.messages[:-1]:
+                        if msg["role"] == "user":
+                            langchain_messages.append(HumanMessage(content=msg["content"]))
+                        elif msg["role"] == "assistant":
+                            langchain_messages.append(AIMessage(content=msg["content"]))
 
-# Display previous messages
-for chat in st.session_state.messages:
-    #  This insert a chat message container so that can display messages
-    with st.chat_message(chat["role"]):
-        st.markdown(chat["content"])
+                    input_state = OverallState(
+                        query=prompt,
+                        messages=langchain_messages,
+                        input_guardrails=False,
+                        use_rag=False,
+                        formatted_query=None,
+                        sub_results=[],
+                    )
 
-# Chat input
-if prompt := st.chat_input("Type your question here..."):
-    # Store user message
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+                    config = {"configurable": {"thread_id": str(uuid.uuid4())}}
+                    context = ContextSchema(user_id=st.session_state.username)
+                    logger.info(f"Input State : {input_state}")
+                    logger.info(f"Context : {context}")
+                    output = main_graph.invoke(
+                        input_state,
+                        config=config,
+                        context=context,
+                    )
+                    # Log output without sub_results for cleaner logs
+                    log_output = {k: v for k, v in output.items() if k != "sub_results"}
+                    logger.info(f"LangGraph Output: {log_output}")
+                    logger.info(f"Chat Response: {output['final_result']}")
+                    final_response = output["final_result"]
+                    st.markdown(final_response)
 
-    # Process with RAG
-    with st.chat_message("assistant", avatar="public/favicon.jpg"):
-        with st.spinner("Thinking..."):
-            response = rag_instance.main(query=prompt)
-            if hasattr(response, "__iter__") and not isinstance(response, str):
-                # Handle stream-like objects
-                final_response = st.write_stream(response)
-            else:
-                # Handle string responses
-                st.markdown(response)
-                final_response = response
+                except Exception as e:
+                    error_msg = f"An error occurred: {str(e)}"
+                    st.error(error_msg)
+                    final_response = error_msg
 
-    # Save assistant response
-    st.session_state.messages.append({"role": "assistant", "content": final_response})
+        st.session_state.messages.append({"role": "assistant", "content": final_response})
+
+
+if __name__ == "__main__":
+    main()
 
 # Command to start the app
 # streamlit run main.py --server.runOnSave true

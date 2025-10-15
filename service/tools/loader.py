@@ -3,7 +3,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from process.utils.logger import get_logger
+from utils.logger import get_logger
 
 # Initialize logger
 logger = get_logger(__name__)

@@ -3,10 +3,11 @@ from langchain.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
+    MessagesPlaceholder,
 )
 from pydantic import BaseModel, Field
 from typing import List
-from process.utils.logger import get_logger
+from utils.logger import get_logger
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -46,10 +47,11 @@ class QueryAgent:
 
             The goal is to maximize the chances of finding relevant information in a knowledge base.
 
-            Each query should be standalone and not depend on previous context.
+            Consider the chat history to understand context and references for ambiguous queries.
+            Each query should be standalone and include necessary context from the conversation.
+            Only return maximum of 3 subqueries.
             """
         )
-        logger.info("System prompt set")
 
     def set_user_prompt(self):
         self.user_prompt = HumanMessagePromptTemplate.from_template(
@@ -60,16 +62,20 @@ class QueryAgent:
             User Query: {query}
             """
         )
-        logger.info("User prompt set")
 
     def reconstruct_prompt(self):
         self.set_system_prompt()
         self.set_user_prompt()
         self.prompt_template = ChatPromptTemplate.from_messages(
-            [self.system_prompt, self.user_prompt]
+            [
+                self.system_prompt,
+                MessagesPlaceholder(variable_name="chat_history"),
+                self.user_prompt,
+            ]
         )
         self.chain = self.prompt_template | self.agent
-        logger.info("Agent chain set.")
 
-    def run(self, query):
-        return self.chain.invoke({"query": query})
+    def run(self, query, chat_history=None):
+        if chat_history is None:
+            chat_history = []
+        return self.chain.invoke({"query": query, "chat_history": chat_history})

@@ -6,7 +6,7 @@ from langchain.prompts import (
 )
 from pydantic import BaseModel, Field
 from typing import Literal
-from process.utils.logger import get_logger
+from utils.logger import get_logger
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -57,7 +57,6 @@ class InputAgent:
             Based on the above criteria, provide a classification.
             """
         )
-        logger.info("System prompt set")
 
     def set_user_prompt(self):
         self.user_prompt = HumanMessagePromptTemplate.from_template(
@@ -65,7 +64,6 @@ class InputAgent:
             User Query: {query}
             """
         )
-        logger.info("User prompt set")
 
     def reconstruct_prompt(self):
         self.set_system_prompt()
@@ -74,7 +72,6 @@ class InputAgent:
             [self.system_prompt, self.user_prompt]
         )
         self.chain = self.prompt_template | self.agent
-        logger.info("Agent chain set.")
 
     def run(self, query):
         return self.chain.invoke({"query": query})

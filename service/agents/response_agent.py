@@ -1,11 +1,11 @@
 import os
-import logfire
 from langchain_openai import ChatOpenAI
 from langchain.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
+    MessagesPlaceholder,
 )
-from process.utils.logger import get_logger
+from utils.logger import get_logger
 from dotenv import load_dotenv
 
 os.environ["LANGSMITH_OTEL_ENABLED"] = "true"
@@ -13,12 +13,6 @@ os.environ["LANGSMITH_TRACING"] = "true"
 load_dotenv()
 
 logger = get_logger(__name__)
-
-logfire.configure(
-    token="pylf_v1_us_pLcgB8kDHBvSY5mQyqcgB1k6TdkDlw4fV3HvhPkPl98b",
-    service_name="rag-response-agent",
-    scrubbing=False,
-)
 
 
 class ResponseAgent:
@@ -40,16 +34,16 @@ class ResponseAgent:
             You reconstruct answers based on user queries and provided document responses.
             """
         )
-        logger.info("System prompt set")
 
     def set_user_prompt(self):
         self.user_prompt = HumanMessagePromptTemplate.from_template(
             """
-            You reconstruct answers based on
-            - user orignal query
-            - subqueries
-            - relevant memory (if exists)
-            - provided document responses
+            You reconstruct answers based on:
+            - Chat history (for context and continuity)
+            - User original query
+            - Subqueries
+            - Relevant memory (if exists)
+            - Provided document responses
 
             The subqueries are the broken down version of the user query.
             In some cases the subqueries would be identical to the user query.
@@ -60,27 +54,37 @@ class ResponseAgent:
             Search Results: {search_result}
 
 
-            Give a clear and complete answer.
+            Give a clear and complete answer that considers the conversation context.
             Also reference the index of the document in the search results.
 
             If you do not have enough information to answer the query, say so.
             """
         )
-        logger.info(f"User prompt set: \n {self.user_prompt}")
 
     def reconstruct_prompt(self):
         self.set_system_prompt()
         self.set_user_prompt()
         self.reconstruction_prompt = ChatPromptTemplate.from_messages(
-            [self.system_prompt, self.user_prompt]
+            [
+                self.system_prompt,
+                MessagesPlaceholder(variable_name="chat_history"),
+                self.user_prompt,
+            ]
         )
-        logger.info("Prompt template set")
 
-    def create_prompt(self, query, sub_queries, memory, search_result):
+    def create_prompt(self, query, sub_queries, memory, search_result, chat_history=None):
+        if chat_history is None:
+            chat_history = []
         return self.reconstruction_prompt.format_messages(
-            query=query, sub_queries=sub_queries, memory=memory, search_result=search_result
+            query=query,
+            sub_queries=sub_queries,
+            memory=memory,
+            search_result=search_result,
+            chat_history=chat_history,
         )
 
-    def answer(self, query, sub_queries, memory, search_result):
-        prompt = self.create_prompt(query, sub_queries, memory, search_result)
+    def answer(self, query, sub_queries, memory, search_result, chat_history=None):
+        if chat_history is None:
+            chat_history = []
+        prompt = self.create_prompt(query, sub_queries, memory, search_result, chat_history)
         return self.agent.invoke(prompt)

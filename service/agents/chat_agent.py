@@ -1,3 +1,5 @@
+import os
+import logfire
 from langchain_openai import ChatOpenAI
 from langchain.prompts import (
     ChatPromptTemplate,
@@ -6,12 +8,14 @@ from langchain.prompts import (
 )
 from pydantic import BaseModel
 from langchain.prompts import MessagesPlaceholder
-from process.utils.logger import get_logger
+from utils.logger import get_logger
 from dotenv import load_dotenv
 
 load_dotenv()
-
 logger = get_logger(__name__)
+os.environ["LANGSMITH_OTEL_ENABLED"] = "true"
+os.environ["LANGSMITH_TRACING"] = "true"
+logfire.configure(token="pylf_v1_us_FtxMdcJ7Kd2HNpvrSxbtcR3HjrmfxSjG9djQP2CL8gtV")
 
 
 class ChatAgentResponse(BaseModel):
@@ -27,12 +31,14 @@ class ChatAgent:
         self.reconstruct_prompt()
 
     def create_agent(self):
-        self.model = ChatOpenAI(model=self.model_name, temperature=self.temperature)
-        # self.model = self.model.bind_tools(
-        #     tools=[],
-        #     response_format=ChatAgentResponse,
-        #     strict=True,
-        # )
+        # self.model = ChatOpenAI(model=self.model_name, temperature=self.temperature)
+        self.model = ChatOpenAI(
+            model=self.model_name,
+            temperature=self.temperature,
+            api_key=os.getenv("OPENROUTER_API_KEY"),
+            base_url="https://openrouter.ai/api/v1",
+            max_retries=2,
+        )
         self.model = self.model.with_structured_output(
             schema=ChatAgentResponse,
             include_raw=False,
@@ -48,15 +54,14 @@ class ChatAgent:
             set use_rag = true and return "This is a NBA rule related question".
             """
         )
-        logger.info("System prompt set")
 
     def set_user_prompt(self):
         self.user_prompt = HumanMessagePromptTemplate.from_template(
             """
+            User Name: {username}
             User Query: {query}
             """
         )
-        logger.info("User prompt set")
 
     def reconstruct_prompt(self):
         self.set_system_prompt()
@@ -69,7 +74,31 @@ class ChatAgent:
             ]
         )
         self.chain = self.prompt_template | self.model
-        logger.info("Agent chain set.")
 
-    def run(self, query, chat_history):
-        return self.chain.invoke({"query": query, "chat_history": chat_history})
+    def run(self, query, chat_history, username=None):
+        try:
+            # Get the formatted prompt before invoking the chain
+            formatted_messages = self.prompt_template.format_messages(
+                query=query, chat_history=chat_history, username=username
+            )
+
+            logger.info(f"Formatted chat agent prompt: {formatted_messages}")
+
+            # Invoke the chain with the same parameters
+            response = self.chain.invoke(
+                {"query": query, "chat_history": chat_history, "username": username}
+            )
+            logger.info(f"Type of response: {type(response)}")
+            logger.info(f"Chat agent response: {response}")
+
+            # Ensure response has the expected structure
+            if not hasattr(response, "use_rag") or not hasattr(response, "message"):
+                logger.warning(f"Unexpected response format: {response}")
+                return ChatAgentResponse(use_rag=False, message=str(response))
+            return response
+        except Exception as e:
+            logger.error(f"Error in ChatAgent: {str(e)}", exc_info=True)
+            return ChatAgentResponse(
+                use_rag=False,
+                message="I encountered an error processing your request. Please try again.",
+            )

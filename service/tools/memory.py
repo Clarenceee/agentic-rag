@@ -1,6 +1,6 @@
 import os
 from mem0 import Memory
-from process.utils.logger import get_logger
+from utils.logger import get_logger
 from dotenv import load_dotenv
 
 load_dotenv(".env", override=True)

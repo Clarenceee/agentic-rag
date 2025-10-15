@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Optional
 from langchain.schema import Document
 from qdrant_client import QdrantClient, models
-from process.utils.logger import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -43,7 +43,7 @@ class QdrantVectorStore:
         if self.collection_name not in collection_names:
             self.qdrant_client.create_collection(
                 collection_name=self.collection_name,
-                vectors_configs=models.VectorParams(
+                vectors_config=models.VectorParams(
                     size=self.vector_size, distance=self._get_distance_metric()
                 ),
             )
