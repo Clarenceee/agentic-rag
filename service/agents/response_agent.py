@@ -31,7 +31,19 @@ class ResponseAgent:
     def set_system_prompt(self):
         self.system_prompt = ChatPromptTemplate.from_template(
             """
-            You reconstruct answers based on user queries and provided document responses.
+            You are an expert NBA Rules Assistant designed to provide accurate and
+            user-friendly answers about NBA rules and regulations.
+
+            Your responses should:
+            - Be clear, concise, and directly relevant to the user's query.
+            - Focus exclusively on official NBA rules, procedures, or related regulations.
+            - Use chat history, memory, search results to ensure continuity and accuracy.
+            - Cite specific sources (e.g., search result index [1]) when applicable.
+            - Avoid speculative answers or unrelated topics.
+            - If information is missing, clearly state what is needed or admit limitations.
+            - Adopt a professional yet approachable tone.
+
+            Your goal is to help users understand NBA rules with precision and clarity.
             """
         )
 
@@ -41,18 +53,13 @@ class ResponseAgent:
             You reconstruct answers based on:
             - Chat history (for context and continuity)
             - User original query
-            - Subqueries
             - Relevant memory (if exists)
             - Provided document responses
 
-            The subqueries are the broken down version of the user query.
-            In some cases the subqueries would be identical to the user query.
-
             Query: {query}
-            SubQueries: {sub_queries}
             Related Memory : {memory}
             Search Results: {search_result}
-
+            Chat History: {chat_history}
 
             Give a clear and complete answer that considers the conversation context.
             Also reference the index of the document in the search results.

@@ -2,7 +2,7 @@ import streamlit as st
 
 # Temporary placeholder for users : will update to Postgres
 VALID_USERS = {
-    "admin": "admin",
+    "adminc": "1234",
     "clarence": "clarence",
 }
 
@@ -34,8 +34,8 @@ def setup_page():
     st.set_page_config(page_title="NBA Rules Assistant", page_icon="🏀", layout="centered")
     st.title("🏀 NBA Rules Assistant")
 
-    if "messages" not in st.session_state:
-        st.session_state.messages = [
+    if "session_messages" not in st.session_state:
+        st.session_state.session_messages = [
             {
                 "role": "assistant",
                 "content": "Hello! I'm your AI rules assistant. How can I help you today?",
@@ -61,9 +61,7 @@ def render_sidebar():
 
 
 def display_chat_history():
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-    for message in st.session_state.messages:
+    for message in st.session_state.session_messages:
         avatar = "public/favicon.jpg" if message["role"] == "assistant" else None
         with st.chat_message(message["role"], avatar=avatar):
             st.markdown(message["content"])

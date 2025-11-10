@@ -1,6 +1,6 @@
 import os
 import operator
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from dataclasses import dataclass
 from typing import List, Optional, Annotated
 from langgraph.graph import add_messages
@@ -45,9 +45,10 @@ class QueryResult(BaseModel):
 
 class OverallState(BaseModel):
     query: str
-    messages: Annotated[list, add_messages]
+    messages: Annotated[list, add_messages] = Field(default_factory=list)
     formatted_query: Optional[List[str]] = None
     input_guardrails: bool = False
     use_rag: bool = False
-    sub_results: Annotated[List[QueryResult], operator.add] = []
+    sub_results: Annotated[List[QueryResult], operator.add] = Field(default_factory=list)
     final_result: str = ""
+    chat_summary: str = ""

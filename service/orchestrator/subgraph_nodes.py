@@ -2,12 +2,20 @@ import os
 from langgraph.runtime import Runtime
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.memory import InMemorySaver
+
+# from langgraph.checkpoint.memory import InMemorySaver
 from tools.embedding_generator import EmbeddingGenerator
 from tools.vector_store import QdrantVectorStore
 from tools.memory import Mem0Memory
 from states.graph_states import EmbeddingState, QueryResult, ContextSchema
 from langgraph.config import get_stream_writer
+from langgraph.checkpoint.postgres import PostgresSaver
+from psycopg import Connection
+from langfuse import get_client
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
+langfuse = get_client()
 
 
 class RetrievalSubGraph:
@@ -30,7 +38,23 @@ class RetrievalSubGraph:
         )
 
         # Initialize checkpointer
-        self.checkpointer = InMemorySaver()
+        DB_URI = "postgresql://clarencechan@localhost:5432/postgres?sslmode=disable"
+
+        connection_kwargs = {
+            "autocommit": True,
+            "prepare_threshold": 0,
+        }
+
+        conn = Connection.connect(DB_URI, **connection_kwargs)
+        self.checkpointer = PostgresSaver(conn)
+        self.checkpointer.setup()
+        logger.info("Postgres checkpointer initialized")
+
+        # Verify langfuse
+        if langfuse.auth_check():
+            logger.info("Langfuse client is authenticated and ready!")
+        else:
+            logger.info("Authentication failed. Please check your credentials and host.")
 
         # Build the subgraph
         self.subgraph = self._build_subgraph()
@@ -102,4 +126,5 @@ class RetrievalSubGraph:
         subgraph_builder.add_edge("vector_search", END)
         subgraph_builder.add_edge("memory_search", END)
 
+        logger.info("Compiling subgraph")
         return subgraph_builder.compile(checkpointer=self.checkpointer)

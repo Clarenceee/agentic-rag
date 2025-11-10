@@ -17,7 +17,7 @@ class Colors:
 
 # Default log format with colors
 DEFAULT_LOG_FORMAT = f"{Colors.GREEN}%(asctime)s{Colors.RESET} - {Colors.CYAN}%(name)s{Colors.RESET} - %(levelname)s - %(message)s"  # noqa: E501
-DEFAULT_LOG_LEVEL = logging.INFO
+DEFAULT_LOG_LEVEL = logging.DEBUG
 
 # Create logs directory if it doesn't exist
 LOG_DIR = Path("logs")

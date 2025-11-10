@@ -1,5 +1,4 @@
 import os
-import logfire
 from langchain_openai import ChatOpenAI
 from langchain.prompts import (
     ChatPromptTemplate,
@@ -15,7 +14,6 @@ load_dotenv()
 logger = get_logger(__name__)
 os.environ["LANGSMITH_OTEL_ENABLED"] = "true"
 os.environ["LANGSMITH_TRACING"] = "true"
-logfire.configure(token="pylf_v1_us_FtxMdcJ7Kd2HNpvrSxbtcR3HjrmfxSjG9djQP2CL8gtV")
 
 
 class ChatAgentResponse(BaseModel):
@@ -31,17 +29,16 @@ class ChatAgent:
         self.reconstruct_prompt()
 
     def create_agent(self):
-        # self.model = ChatOpenAI(model=self.model_name, temperature=self.temperature)
-        self.model = ChatOpenAI(
-            model=self.model_name,
-            temperature=self.temperature,
-            api_key=os.getenv("OPENROUTER_API_KEY"),
-            base_url="https://openrouter.ai/api/v1",
-            max_retries=2,
-        )
+        self.model = ChatOpenAI(model=self.model_name, temperature=self.temperature)
+        # self.model = ChatOpenAI(
+        #     model=self.model_name,
+        #     temperature=self.temperature,
+        #     api_key=os.getenv("OPENROUTER_API_KEY"),
+        #     base_url="https://openrouter.ai/api/v1",
+        #     max_retries=5,
+        # )
         self.model = self.model.with_structured_output(
             schema=ChatAgentResponse,
-            include_raw=False,
         )
         logger.info(f"Chat agent created with model: {self.model}")
 
@@ -78,6 +75,7 @@ class ChatAgent:
     def run(self, query, chat_history, username=None):
         try:
             # Get the formatted prompt before invoking the chain
+            logger.info(f"Chat agent input history: {chat_history}")
             formatted_messages = self.prompt_template.format_messages(
                 query=query, chat_history=chat_history, username=username
             )
