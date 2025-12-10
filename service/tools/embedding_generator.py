@@ -1,7 +1,6 @@
 from typing import List, Optional
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from langchain.schema import Document
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -10,12 +9,11 @@ logger = get_logger(__name__)
 class EmbeddingGenerator:
     """A class to generate text embeddings using Sentence Transformers."""
 
-    def __init__(self, model_name: str = "BAAI/bge-m3", device: Optional[str] = None):
+    def __init__(self, model_name: str = "Qwen/Qwen3-Embedding-0.6B", device: Optional[str] = None):
         """Initialize the embedding generator with a Sentence Transformers model.
 
         Args:
             model_name: Name of the Sentence Transformers model to use.
-                       Defaults to 'BAAI/bge-m3' which is a good general-purpose model.
             device: Device to run the model on ('cuda', 'mps', 'cpu'). If None, auto-detects.
         """
         logger.info(f"Loading Sentence Transformer model: {model_name}")
@@ -41,9 +39,7 @@ class EmbeddingGenerator:
             logger.error(f"Error generating embedding: {str(e)}")
             raise
 
-    def generate_embeddings_batch(
-        self, documents: List[Document], batch_size: int = 32
-    ) -> List[List[float]]:
+    def generate_embeddings_batch(self, documents, batch_size: int = 32) -> List[List[float]]:
         """Generate embeddings for a batch of documents.
 
         Args:

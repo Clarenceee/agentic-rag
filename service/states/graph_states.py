@@ -1,5 +1,4 @@
 import os
-import operator
 from pydantic import BaseModel, Field
 from dataclasses import dataclass
 from typing import List, Optional, Annotated
@@ -17,6 +16,10 @@ class ContextSchema:
     def __post_init__(self):
         if self.user_id is None:
             self.user_id = os.environ.get("USER_ID", "default_user")
+
+
+class SummarizeResponse(BaseModel):
+    summary: str
 
 
 class InputState(BaseModel):
@@ -41,6 +44,7 @@ class QueryResult(BaseModel):
     subquery: str
     search_result: Optional[List[dict]] = None
     memories: Optional[List[dict]] = None
+    rerank_score: Optional[float] = None
 
 
 class OverallState(BaseModel):
@@ -49,6 +53,6 @@ class OverallState(BaseModel):
     formatted_query: Optional[List[str]] = None
     input_guardrails: bool = False
     use_rag: bool = False
-    sub_results: Annotated[List[QueryResult], operator.add] = Field(default_factory=list)
+    sub_results: List[QueryResult] = Field(default_factory=list)
     final_result: str = ""
     chat_summary: str = ""

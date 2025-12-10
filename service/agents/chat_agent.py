@@ -1,12 +1,12 @@
 import os
 from langchain_openai import ChatOpenAI
-from langchain.prompts import (
+from langchain_core.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
+    MessagesPlaceholder,
 )
 from pydantic import BaseModel
-from langchain.prompts import MessagesPlaceholder
 from utils.logger import get_logger
 from dotenv import load_dotenv
 
@@ -46,9 +46,11 @@ class ChatAgent:
         self.system_prompt = SystemMessagePromptTemplate.from_template(
             """
             You are an expert NBA rules assistant.
-            For greetings or general small talk, reply briefly and naturally without using RAG.
-            For any query related to NBA rules (interpretations, violations, gameplay, etc.),
-            set use_rag = true and return "This is a NBA rule related question".
+            1. For greetings or general small talk, reply briefly and naturally without using RAG.
+            2. For any query related to NBA rules (interpretations, violations, gameplay, etc.),
+            set use_rag = true and return "This is an NBA rule related question".
+            3. For any other non-NBA related questions, respond politely that you specialize in NBA
+            rules and can only answer questions about NBA rules and regulations.
             """
         )
 

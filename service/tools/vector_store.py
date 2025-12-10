@@ -1,5 +1,4 @@
 from typing import List, Dict, Any, Optional
-from langchain.schema import Document
 from qdrant_client import QdrantClient, models
 from utils.logger import get_logger
 
@@ -62,7 +61,7 @@ class QdrantVectorStore:
         }
         return distance_map.get(self.distance, models.Distance.COSINE)
 
-    def add_documents(self, documents: List[Document], embeddings: List[List[float]]) -> None:
+    def add_documents(self, documents, embeddings: List[List[float]]) -> None:
         """Add documents to the vector store.
 
         Args:
