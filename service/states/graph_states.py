@@ -53,6 +53,8 @@ class OverallState(BaseModel):
     formatted_query: Optional[List[str]] = None
     input_guardrails: bool = False
     use_rag: bool = False
+    use_web: bool = False
     sub_results: List[QueryResult] = Field(default_factory=list)
     final_result: str = ""
     chat_summary: str = ""
+    approved: Optional[bool] = None

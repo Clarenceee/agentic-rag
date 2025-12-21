@@ -1,6 +1,7 @@
 from typing import Dict, Any
 from langgraph.graph import StateGraph, END, START
 from langgraph.runtime import Runtime
+from langgraph.types import interrupt
 from langchain_core.runnables import RunnableConfig
 from states.graph_states import (
     InputState,
@@ -15,6 +16,7 @@ from agents.chat_agent import ChatAgent
 from agents.query_agent import QueryAgent
 from agents.response_agent import ResponseAgent
 from tools.reranker import Reranker
+from tools.web_search import web_search
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import AIMessage, HumanMessage, RemoveMessage
 from langgraph.config import get_stream_writer
@@ -100,17 +102,27 @@ class MainGraph:
         human_message = HumanMessage(content=state.query)
         ai_message = AIMessage(content=response.message)
         result = {
-            "messages": [human_message] if response.use_rag else [human_message, ai_message],
+            "messages": (
+                [human_message]
+                if response.use_rag or response.use_web
+                else [human_message, ai_message]
+            ),
             "use_rag": response.use_rag,
+            "use_web": response.use_web,
             "sub_results": [],
         }
-        if not response.use_rag:
+        if not response.use_rag and not response.use_web:
             result["final_result"] = response.message
         return result
 
     def _route_after_rag_usage(self, state: OverallState, runtime: Runtime[ContextSchema]):
         """Function to determine node based on RAG usage result (continue / END)"""
-        return state.use_rag
+        if state.use_rag:
+            return "use_rag"
+        elif state.use_web:
+            return "use_web"
+        else:
+            return END
 
     def _call_retrieval_subgraph(
         self, state: OverallState, config: RunnableConfig, runtime: Runtime[ContextSchema]
@@ -222,6 +234,17 @@ class MainGraph:
         new_messages = to_delete + [AIMessage(content=response.summary)]
         return {"messages": new_messages, "chat_summary": response.summary}
 
+    def _approval_node(self, state: OverallState):
+        approved = interrupt(f"Do you approve this web search for '{state.query}' ?")
+        return {"approved": approved}
+
+    def _approval_routing(self, state: OverallState):
+        return state.approved
+
+    def _call_web_search_node(self, state: OverallState):
+        web_search_response = web_search(state.query)
+        return {"messages": [AIMessage(content=web_search_response.content[0]["text"])]}
+
     def _build_graph(self):
         graph_builder = StateGraph(OverallState)
 
@@ -233,6 +256,9 @@ class MainGraph:
         graph_builder.add_node("make_response", self._make_response)
         graph_builder.add_node("query_formatter", self._query_formatter)
 
+        graph_builder.add_node("approval_node", self._approval_node)
+        graph_builder.add_node("call_web_search_node", self._call_web_search_node)
+
         graph_builder.add_conditional_edges(
             START, self._should_summarize, {True: "chat_summarizer", False: "input_guardrails"}
         )
@@ -241,8 +267,14 @@ class MainGraph:
             "input_guardrails", self._route_after_guardrails, {True: "chat_router", False: END}
         )
         graph_builder.add_conditional_edges(
-            "chat_router", self._route_after_rag_usage, {True: "query_formatter", False: END}
+            "chat_router",
+            self._route_after_rag_usage,
+            {"use_rag": "query_formatter", "use_web": "approval_node", END: END},
         )
+        graph_builder.add_conditional_edges(
+            "approval_node", self._approval_routing, {True: "call_web_search_node", False: END}
+        )
+        graph_builder.add_edge("call_web_search_node", END)
         graph_builder.add_edge("query_formatter", "retrieval_subgraph")
         graph_builder.add_edge("retrieval_subgraph", "make_response")
         graph_builder.add_edge("make_response", END)
