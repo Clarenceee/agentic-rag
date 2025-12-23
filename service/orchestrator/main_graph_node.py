@@ -45,7 +45,7 @@ class MainGraph:
         self.reranker = Reranker()
 
         # Initialize checkpointer
-        DB_URI = "postgresql://clarencechan@localhost:5432/postgres?sslmode=disable"
+        DB_URI = "postgresql://clarencechan@172.17.0.1:5432/postgres?sslmode=disable"
 
         connection_kwargs = {
             "autocommit": True,

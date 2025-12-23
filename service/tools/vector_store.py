@@ -25,7 +25,7 @@ class QdrantVectorStore:
         self.collection_name = collection_name
         self.distance = distance
         self.vector_size = vector_size
-        self.qdrant_url = qdrant_url or "http://localhost:6333"
+        self.qdrant_url = qdrant_url or "http://172.17.0.1:6333"
 
         # Initialize clients
         logger.info(f"Initializing vector store with url: {self.qdrant_url}")

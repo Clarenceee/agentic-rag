@@ -14,7 +14,7 @@ class VectorStoreConfig(BaseModel):
     vector_size: int = 384  # Default for BAAI/bge-small-en-v1.5
     distance: str = "Cosine"
     on_disk: bool = True
-    url: str = Field(default_factory=lambda: os.getenv("QDRANT_URL", "http://localhost:6333"))
+    url: str = Field(default_factory=lambda: os.getenv("QDRANT_URL"))
 
 
 class EmbeddingConfig(BaseModel):

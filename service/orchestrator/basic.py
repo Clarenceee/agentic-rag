@@ -18,7 +18,7 @@ class NbaRag:
     def __init__(self, user_id):
         self.user_id = user_id
         self.collection_name = "nba_rules_test"
-        self.qdrant_url = "http://localhost:6333"
+        self.qdrant_url = "http://172.17.0.1:6333"
         self.embGenerator = EmbeddingGenerator()
         self.qdrantStore = QdrantVectorStore(
             collection_name=self.collection_name,
