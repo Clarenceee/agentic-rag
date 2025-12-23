@@ -26,7 +26,7 @@ class RetrievalSubGraph:
 
     def __init__(self):
         self.collection_name = os.getenv("QDRANT_COLLECTION", "nba_rules_test")
-        self.qdrant_url = os.getenv("QDRANT_URL", "http://localhost:6333")
+        self.qdrant_url = os.getenv("QDRANT_URL")
 
         # Initialize components
         self.emb_generator = EmbeddingGenerator()
@@ -38,7 +38,7 @@ class RetrievalSubGraph:
         )
 
         # Initialize checkpointer
-        DB_URI = "postgresql://clarencechan@localhost:5432/postgres?sslmode=disable"
+        DB_URI = "postgresql://clarencechan@172.17.0.1:5432/postgres?sslmode=disable"
 
         connection_kwargs = {
             "autocommit": True,
