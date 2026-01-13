@@ -35,7 +35,7 @@ class QueryAgent:
     def create_agent(self):
         self.model = ChatOpenAI(model=self.model_name, temperature=self.temperature)
         self.agent = self.model.with_structured_output(SearchQueryList)
-        logger.info(f"Query Reformatter agent created with model: {self.model}")
+        logger.info(f"Query Reformatter agent created with model: {self.model_name}")
 
     def set_system_prompt(self):
         self.system_prompt = SystemMessagePromptTemplate.from_template(

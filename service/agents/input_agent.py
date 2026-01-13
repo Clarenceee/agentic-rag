@@ -33,7 +33,7 @@ class InputAgent:
     def create_agent(self):
         self.model = ChatOpenAI(model=self.model_name, temperature=self.temperature)
         self.agent = self.model.with_structured_output(GuardrailOutput)
-        logger.info(f"Input guard rail agent created with model: {self.model}")
+        logger.info(f"Input guard rail agent created with model: {self.model_name}")
 
     def set_system_prompt(self):
         self.system_prompt = SystemMessagePromptTemplate.from_template(

@@ -41,7 +41,7 @@ class ChatAgent:
         self.model = self.model.with_structured_output(
             schema=ChatAgentResponse,
         )
-        logger.info(f"Chat agent created with model: {self.model}")
+        logger.info(f"Chat agent created with model: {self.model_name}")
 
     def set_system_prompt(self):
         self.system_prompt = SystemMessagePromptTemplate.from_template(
@@ -91,18 +91,18 @@ class ChatAgent:
         try:
             # Get the formatted prompt before invoking the chain
             logger.info(f"Chat agent input history: {chat_history}")
-            formatted_messages = self.prompt_template.format_messages(
-                query=query, chat_history=chat_history, username=username
-            )
+            # formatted_messages = self.prompt_template.format_messages(
+            #     query=query, chat_history=chat_history, username=username
+            # )
 
-            logger.info(f"Formatted chat agent prompt: {formatted_messages}")
+            # logger.info(f"Formatted chat agent prompt: {formatted_messages}")
 
             # Invoke the chain with the same parameters
             response = self.chain.invoke(
                 {"query": query, "chat_history": chat_history, "username": username}
             )
-            logger.info(f"Type of response: {type(response)}")
-            logger.info(f"Chat agent response: {response}")
+            # logger.info(f"Type of response: {type(response)}")
+            # logger.info(f"Chat agent response: {response}")
 
             # Ensure response has the expected structure
             if not hasattr(response, "use_rag") or not hasattr(response, "message"):
